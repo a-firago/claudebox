@@ -425,6 +425,7 @@ _describe_profile() {
             echo "- gcc-aarch64-linux-gnu - AArch64 cross-compiler"
             echo "- device-tree-compiler, u-boot-tools, mtd-utils - Embedded build tools"
             echo "- android-sdk-build-tools, android-sdk-platform-tools - Android SDK tools"
+            echo "- adb connects via the host's adb server (ANDROID_ADB_SERVER_ADDRESS set automatically)"
             echo
             ;;
 

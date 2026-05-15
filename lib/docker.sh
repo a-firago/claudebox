@@ -246,7 +246,20 @@ run_claudebox_container() {
     if [[ -d "$HOME/.config/AmneziaVPN.ORG" ]]; then
         docker_args+=(-v "$HOME/.config/AmneziaVPN.ORG":"/home/$DOCKER_USER/.config/AmneziaVPN.ORG:ro")
     fi
-    
+
+    # ADB host server forwarding — when aosp profile is active, route adb through
+    # the host's adb server so USB-attached devices are visible inside the container.
+    local aosp_active=false
+    if [[ -f "$PROJECT_PARENT_DIR/profiles.ini" ]]; then
+        if grep -q "^aosp" "$PROJECT_PARENT_DIR/profiles.ini"; then
+            aosp_active=true
+        fi
+    fi
+    if [[ "$aosp_active" == "true" ]]; then
+        docker_args+=(--add-host=host.docker.internal:host-gateway)
+        docker_args+=(-e ANDROID_ADB_SERVER_ADDRESS=host.docker.internal)
+    fi
+
     # Mount .env file if it exists in the project directory
     if [[ -f "$PROJECT_DIR/.env" ]]; then
         docker_args+=(-v "$PROJECT_DIR/.env":/workspace/.env:ro)

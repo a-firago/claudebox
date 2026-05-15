@@ -41,6 +41,7 @@ apt-get install -y --no-install-recommends \
     mtd-utils \
     android-sdk-build-tools \
     android-sdk-platform-tools \
+    adb \
     gdisk \
     liblz4-tool \
     m4 \
