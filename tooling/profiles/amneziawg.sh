@@ -15,8 +15,9 @@ export DEBIAN_FRONTEND=noninteractive
 echo "[amneziawg] Installing prerequisites..."
 # resolvconf is intentionally excluded: its post-install script tries to replace
 # /etc/resolv.conf with a symlink, which fails in Docker (bind-mounted by the runtime).
+apt-get update
 apt-get install -y --no-install-recommends \
-    gnupg2 \
+    gnupg \
     iproute2 \
     apt-transport-https \
     ca-certificates
