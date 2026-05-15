@@ -88,16 +88,54 @@ mkdir -p /etc/claudebox/startup.d
 cat > /etc/claudebox/startup.d/10-amneziawg.sh << 'STARTUP_HOOK'
 #!/bin/sh
 # Auto-start AmneziaWG VPN tunnels at container startup.
-# Iterates all .conf files mounted from the host under ~/.config/AmneziaVPN.ORG/.
+# After VPN is up, adds ip rules to bypass the tunnel for corporate CIDRs
+# listed under [vpn-routing] in profiles.ini, so corporate VPN traffic
+# routes via the host's VPN interface instead of the Amnezia tunnel.
+
+_add_vpn_bypass_rules() {
+    local profiles_ini="/home/claude/.claudebox/profiles.ini"
+    if [ ! -f "$profiles_ini" ]; then
+        return
+    fi
+    local in_section=false
+    local cidr line
+    while IFS= read -r line; do
+        case "$line" in
+            '[vpn-routing]')
+                in_section=true
+                ;;
+            '['*']')
+                in_section=false
+                ;;
+            *)
+                if [ "$in_section" = "true" ] && [ -n "$line" ]; then
+                    cidr="$line"
+                    if ! ip rule show | grep -q "to $cidr lookup main"; then
+                        ip rule add to "$cidr" lookup main priority 100
+                        printf '[amneziawg] Bypass rule added: %s -> main table\n' "$cidr"
+                    fi
+                fi
+                ;;
+        esac
+    done < "$profiles_ini"
+}
+
+vpn_started=false
 for conf in /home/*/.config/AmneziaVPN.ORG/*.conf; do
     if [ ! -f "$conf" ]; then
         continue
     fi
     printf '[amneziawg] Starting VPN: %s\n' "$(basename "$conf")"
-    if ! awg-quick up "$conf" 2>&1; then
+    if awg-quick up "$conf" 2>&1; then
+        vpn_started=true
+    else
         printf '[amneziawg] Warning: failed to start %s\n' "$(basename "$conf")" >&2
     fi
 done
+
+if [ "$vpn_started" = "true" ]; then
+    _add_vpn_bypass_rules
+fi
 STARTUP_HOOK
 chmod +x /etc/claudebox/startup.d/10-amneziawg.sh
 

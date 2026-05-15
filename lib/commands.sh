@@ -53,6 +53,13 @@ source "${LIB_DIR}/commands.info.sh"
 source "${LIB_DIR}/commands.clean.sh"
 
 # ============================================================================
+# VPN ROUTING COMMANDS - Corporate VPN access from containers
+# ============================================================================
+# Commands: vpn-routing
+# - vpn-routing: Enable/disable corporate VPN routing; manage bypass CIDRs
+source "${LIB_DIR}/commands.vpnrouting.sh"
+
+# ============================================================================
 # SYSTEM COMMANDS - System utilities and special features
 # ============================================================================
 # Commands: save, unlink, rebuild, tmux, project
@@ -122,7 +129,8 @@ show_help() {
   slots                           List all container slots
   slot <number>                   Launch a specific container slot
   project <name>                  Open project by name/hash from anywhere
-  tmux                            Launch ClaudeBox with tmux support enabled"
+  tmux                            Launch ClaudeBox with tmux support enabled
+  vpn-routing [enable|disable|add|remove]  Manage corporate VPN routing"
     
     # Check if we're in a project directory
     local project_folder_name
@@ -280,6 +288,9 @@ dispatch_command() {
         kill)             _cmd_kill "$@" ;;
         
         # Info commands
+        # VPN routing commands
+        vpn-routing)      _cmd_vpn_routing "$@" ;;
+
         projects)         _cmd_projects "$@" ;;
         allowlist)        _cmd_allowlist "$@" ;;
         info)             _cmd_info "$@" ;;

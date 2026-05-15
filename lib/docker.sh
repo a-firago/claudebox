@@ -77,6 +77,91 @@ docker_exec_user() {
     docker exec -u "$DOCKER_USER" "$@"
 }
 
+# _setup_vpn_routing: Apply host iptables rules so Docker containers can reach corporate
+# VPN resources. Detects VPN interfaces from ip route; idempotent (checks before adding).
+# Requires passwordless sudo for iptables; prints manual commands if unavailable.
+_setup_vpn_routing() {
+    if [[ "$(uname -s)" != "Linux" ]]; then
+        return 0
+    fi
+    if ! command -v ip >/dev/null 2>&1; then
+        return 0
+    fi
+    if ! command -v iptables >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local default_iface
+    default_iface=$(ip route show default 2>/dev/null | awk '/default/ {print $5; exit}')
+    if [[ -z "$default_iface" ]]; then
+        return 0
+    fi
+
+    local docker_cidr
+    docker_cidr=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null)
+    if [[ -z "$docker_cidr" ]]; then
+        return 0
+    fi
+
+    local vpn_ifaces
+    vpn_ifaces=$(ip route 2>/dev/null | awk '
+        /dev / && ($1 ~ /^10\./ ||
+                   $1 ~ /^172\.1[6-9]\./ || $1 ~ /^172\.2[0-9]\./ || $1 ~ /^172\.3[01]\./ ||
+                   $1 ~ /^192\.168\./) {
+            for (i = 1; i <= NF; i++) if ($i == "dev") print $(i+1)
+        }
+    ' 2>/dev/null | sort -u 2>/dev/null) || true
+
+    if [[ -z "$vpn_ifaces" ]]; then
+        return 0
+    fi
+
+    local have_sudo=false
+    if sudo -n true 2>/dev/null; then
+        have_sudo=true
+    fi
+
+    local iface
+    while IFS= read -r iface; do
+        if [[ -z "$iface" ]]; then
+            continue
+        fi
+        if [[ "$iface" == "$default_iface" ]]; then
+            continue
+        fi
+        case "$iface" in
+            lo|docker*|br-*|veth*)
+                continue
+                ;;
+        esac
+
+        if [[ "$have_sudo" != "true" ]]; then
+            printf '[claudebox] VPN routing: passwordless sudo needed for iptables on %s. Run manually:\n' "$iface" >&2
+            printf '  sudo iptables -t nat -A POSTROUTING -s %s -o %s -j MASQUERADE\n' "$docker_cidr" "$iface" >&2
+            printf '  sudo iptables -I DOCKER-USER -i docker0 -o %s -j ACCEPT\n' "$iface" >&2
+            printf '  sudo iptables -I DOCKER-USER -i %s -o docker0 -m state --state RELATED,ESTABLISHED -j ACCEPT\n' "$iface" >&2
+            continue
+        fi
+
+        if ! sudo -n iptables -t nat -C POSTROUTING -s "$docker_cidr" -o "$iface" -j MASQUERADE 2>/dev/null; then
+            sudo -n iptables -t nat -A POSTROUTING -s "$docker_cidr" -o "$iface" -j MASQUERADE 2>/dev/null || true
+        fi
+
+        if ! sudo -n iptables -C DOCKER-USER -i docker0 -o "$iface" -j ACCEPT 2>/dev/null; then
+            sudo -n iptables -I DOCKER-USER -i docker0 -o "$iface" -j ACCEPT 2>/dev/null || true
+        fi
+
+        if ! sudo -n iptables -C DOCKER-USER -i "$iface" -o docker0 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null; then
+            sudo -n iptables -I DOCKER-USER -i "$iface" -o docker0 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+        fi
+
+        if [[ "$VERBOSE" == "true" ]]; then
+            printf '[claudebox] VPN routing configured: %s -> docker bridge %s\n' "$iface" "$docker_cidr" >&2
+        fi
+
+    done <<< "$vpn_ifaces"
+}
+
 # run_claudebox_container - Main entry point for container execution
 # Usage: run_claudebox_container <container_name> <mode> [args...]
 # Args:
@@ -225,7 +310,7 @@ run_claudebox_container() {
     if [[ ! -d "$PROJECT_SLOT_DIR/.claude" ]]; then
         mkdir -p "$PROJECT_SLOT_DIR/.claude"
     fi
-    
+
     docker_args+=(-v "$PROJECT_SLOT_DIR/.claude":/home/$DOCKER_USER/.claude)
     
     # Mount .claude.json only if it already exists (from previous session)
@@ -421,6 +506,12 @@ run_claudebox_container() {
         docker_args+=("${container_args[@]}")
     fi
     
+    # Apply host iptables VPN routing rules if opted in via profiles.ini
+    if [[ -f "$PROJECT_PARENT_DIR/profiles.ini" ]] && \
+       grep -q '^\[vpn-routing\]' "$PROJECT_PARENT_DIR/profiles.ini"; then
+        _setup_vpn_routing
+    fi
+
     # Run the container
     if [[ "$VERBOSE" == "true" ]]; then
         echo "[DEBUG] Docker run command: docker run ${docker_args[*]}" >&2
@@ -471,4 +562,4 @@ run_docker_build() {
         -f "$1" -t "$IMAGE_NAME" "$2" || error "Docker build failed"
 }
 
-export -f check_docker install_docker configure_docker_nonroot docker_exec_root docker_exec_user run_claudebox_container check_container_exists run_docker_build
+export -f check_docker install_docker configure_docker_nonroot docker_exec_root docker_exec_user run_claudebox_container check_container_exists run_docker_build _setup_vpn_routing
