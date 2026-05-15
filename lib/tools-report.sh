@@ -399,6 +399,24 @@ _describe_profile() {
             echo
             ;;
             
+        aosp)
+            echo "**AOSP Build Environment**"
+            echo
+            echo "Android Open Source Project build dependencies:"
+            echo "- git-core, gnupg - Version control and signing"
+            echo "- flex, bison - Parser generators"
+            echo "- build-essential, zip, curl - Core build tools"
+            echo "- zlib1g-dev, libc6-dev-i386 - Compression and 32-bit compat libraries"
+            echo "- x11proto-core-dev, libx11-dev - X11 protocol and client libraries"
+            echo "- lib32z1-dev, libgl1-mesa-dev - 32-bit zlib and OpenGL libraries"
+            echo "- libxml2-utils, xsltproc - XML processing tools"
+            echo "- unzip, fontconfig - Archive and font utilities"
+            echo "- gcc-aarch64-linux-gnu - AArch64 cross-compiler"
+            echo "- device-tree-compiler, u-boot-tools, mtd-utils - Embedded build tools"
+            echo "- android-sdk-build-tools, android-sdk-platform-tools - Android SDK tools"
+            echo
+            ;;
+
         amneziawg)
             echo "**AmneziaWG VPN Tools**"
             echo
