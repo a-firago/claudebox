@@ -37,6 +37,7 @@ get_profile_packages() {
         ml) echo "" ;;  # Just cmake needed, comes from build-tools now
         amneziawg) echo "" ;;  # Installed via tooling script (Amnezia PPA)
         aosp) echo "" ;;  # Installed via tooling script
+        python2) echo "" ;;  # Installed via tooling script (pyenv)
         *) echo "" ;;
     esac
 }
@@ -66,12 +67,13 @@ get_profile_description() {
         ml) echo "Machine Learning (build layer only; Python via uv)" ;;
         amneziawg) echo "AmneziaWG VPN Tools (awg, awg-quick client utilities via Amnezia PPA)" ;;
         aosp) echo "AOSP Build Environment (Android Open Source Project build dependencies)" ;;
+        python2) echo "Python 2 (2.7.18 via pyenv, available as python2/pip2)" ;;
         *) echo "" ;;
     esac
 }
 
 get_all_profile_names() {
-    echo "core build-tools shell networking c openwrt rust python go flutter javascript java ruby php database devops web embedded datascience security ml amneziawg aosp"
+    echo "core build-tools shell networking c openwrt rust python go flutter javascript java ruby php database devops web embedded datascience security ml amneziawg aosp python2"
 }
 
 profile_exists() {
@@ -87,6 +89,7 @@ expand_profile() {
         c) echo "core build-tools c" ;;
         openwrt) echo "core build-tools openwrt" ;;
         ml) echo "core build-tools ml" ;;
+        python2) echo "core build-tools python2" ;;
         rust|go|flutter|python|php|ruby|java|database|devops|web|embedded|datascience|security|javascript|amneziawg|aosp)
             echo "core $1"
             ;;

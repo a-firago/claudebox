@@ -399,6 +399,17 @@ _describe_profile() {
             echo
             ;;
             
+        python2)
+            echo "**Python 2**"
+            echo
+            echo "Python 2.7.18 installed via pyenv:"
+            echo "- python2 - Python 2.7.18 interpreter"
+            echo "- pip2 - pip for Python 2.7"
+            echo "- pyenv - manages the Python 2.7 installation (~/.pyenv)"
+            echo "- Does not affect system Python 3 or uv-managed environments"
+            echo
+            ;;
+
         aosp)
             echo "**AOSP Build Environment**"
             echo
