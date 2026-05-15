@@ -545,6 +545,16 @@ build_docker_image() {
             local profile_fn="get_profile_${profile//-/_}"
             if type -t "$profile_fn" >/dev/null; then
                 profile_installations+=$'\n'"$($profile_fn)"
+            else
+                # Fall back to tooling script if no function exists
+                local tooling_script="${root_dir}/tooling/profiles/${profile}.sh"
+                if [[ -f "$tooling_script" ]]; then
+                    local script_name="profile-${profile}.sh"
+                    cp "$tooling_script" "$build_context/$script_name"
+                    chmod +x "$build_context/$script_name"
+                    profile_installations+=$'\n'"COPY ${script_name} /tmp/${script_name}"
+                    profile_installations+=$'\n'"RUN bash /tmp/${script_name} && rm /tmp/${script_name}"
+                fi
             fi
         done
         

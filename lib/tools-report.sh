@@ -399,6 +399,18 @@ _describe_profile() {
             echo
             ;;
             
+        amneziawg)
+            echo "**AmneziaWG VPN Tools**"
+            echo
+            echo "AmneziaWG client utilities:"
+            echo "- awg - AmneziaWG configuration tool (wg-compatible)"
+            echo "- awg-quick - Bring up/down AmneziaWG tunnels"
+            echo "- Installed from the official Amnezia PPA"
+            echo "- VPN auto-starts at container launch (configs from ~/.config/AmneziaVPN.ORG/)"
+            echo "- Requires --cap-add=NET_ADMIN on the container to bring up tunnels"
+            echo
+            ;;
+
         *)
             echo "**Custom Profile: $profile**"
             echo

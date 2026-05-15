@@ -35,6 +35,7 @@ get_profile_packages() {
         datascience) echo "r-base" ;;
         security) echo "nmap tcpdump wireshark-common netcat-openbsd john hashcat hydra" ;;
         ml) echo "" ;;  # Just cmake needed, comes from build-tools now
+        amneziawg) echo "" ;;  # Installed via tooling script (Amnezia PPA)
         *) echo "" ;;
     esac
 }
@@ -62,12 +63,13 @@ get_profile_description() {
         datascience) echo "Data Science (Python, Jupyter, R)" ;;
         security) echo "Security Tools (scanners, crackers, packet tools)" ;;
         ml) echo "Machine Learning (build layer only; Python via uv)" ;;
+        amneziawg) echo "AmneziaWG VPN Tools (awg, awg-quick client utilities via Amnezia PPA)" ;;
         *) echo "" ;;
     esac
 }
 
 get_all_profile_names() {
-    echo "core build-tools shell networking c openwrt rust python go flutter javascript java ruby php database devops web embedded datascience security ml"
+    echo "core build-tools shell networking c openwrt rust python go flutter javascript java ruby php database devops web embedded datascience security ml amneziawg"
 }
 
 profile_exists() {
@@ -83,7 +85,7 @@ expand_profile() {
         c) echo "core build-tools c" ;;
         openwrt) echo "core build-tools openwrt" ;;
         ml) echo "core build-tools ml" ;;
-        rust|go|flutter|python|php|ruby|java|database|devops|web|embedded|datascience|security|javascript)
+        rust|go|flutter|python|php|ruby|java|database|devops|web|embedded|datascience|security|javascript|amneziawg)
             echo "core $1"
             ;;
         shell|networking|build-tools|core)

@@ -241,6 +241,11 @@ run_claudebox_container() {
     
     # Mount SSH directory
     docker_args+=(-v "$HOME/.ssh":"/home/$DOCKER_USER/.ssh:ro")
+
+    # Mount AmneziaWG VPN config directory (read-only; awg-quick only reads configs)
+    if [[ -d "$HOME/.config/AmneziaVPN.ORG" ]]; then
+        docker_args+=(-v "$HOME/.config/AmneziaVPN.ORG":"/home/$DOCKER_USER/.config/AmneziaVPN.ORG:ro")
+    fi
     
     # Mount .env file if it exists in the project directory
     if [[ -f "$PROJECT_DIR/.env" ]]; then
@@ -393,6 +398,8 @@ run_claudebox_container() {
         -e "CLAUDEBOX_TMUX_PANE=${CLAUDEBOX_TMUX_PANE:-}"
         --cap-add NET_ADMIN
         --cap-add NET_RAW
+        --sysctl net.ipv4.conf.all.src_valid_mark=1
+        --sysctl net.ipv4.conf.all.rp_filter=2
         "$IMAGE_NAME"
     )
     

@@ -213,6 +213,15 @@ fi
 
 cd /home/DOCKERUSER
 
+# Run startup hooks (executed as root before dropping to DOCKERUSER)
+if [ -d /etc/claudebox/startup.d ]; then
+    for hook in /etc/claudebox/startup.d/*.sh; do
+        if [ -f "$hook" ] && [ -x "$hook" ]; then
+            "$hook" || true
+        fi
+    done
+fi
+
 # No need for complex exit handlers - just copy after claude exits
 
 if [[ "${SHELL_MODE:-false}" == "true" ]]; then
