@@ -14,6 +14,13 @@ PROJECT_DIR="${PROJECT_DIR:-$(pwd)}"
 readonly LINK_TARGET="$HOME/.local/bin/claudebox"
 export CLAUDEBOX_HOME="${HOME}/.claudebox"
 
+# VPN gateway constants
+readonly VPN_GW_CONTAINER="claudebox-vpn-gw"
+readonly VPN_GW_NETWORK="claudebox-vpn"
+readonly VPN_GW_SUBNET="172.20.0.0/16"
+readonly VPN_GW_SUBNET_GW="172.20.0.1"
+export VPN_GW_CONTAINER VPN_GW_NETWORK VPN_GW_SUBNET VPN_GW_SUBNET_GW
+
 # Version constants
 readonly NODE_VERSION="--lts"
 readonly DELTA_VERSION="0.17.0"

@@ -60,6 +60,20 @@ source "${LIB_DIR}/commands.clean.sh"
 source "${LIB_DIR}/commands.vpnrouting.sh"
 
 # ============================================================================
+# VPN GATEWAY COMMANDS - Shared AmneziaWG gateway for parallel containers
+# ============================================================================
+# Commands: vpn-gw
+# - vpn-gw: Start/stop/status a shared VPN gateway container
+source "${LIB_DIR}/commands.vpngw.sh"
+
+# ============================================================================
+# MOUNT COMMANDS - Extra host directories in the container workspace
+# ============================================================================
+# Commands: mount
+# - mount: Add/remove/list extra bind mounts for this project
+source "${LIB_DIR}/commands.mount.sh"
+
+# ============================================================================
 # SYSTEM COMMANDS - System utilities and special features
 # ============================================================================
 # Commands: save, unlink, rebuild, tmux, project
@@ -130,7 +144,9 @@ show_help() {
   slot <number>                   Launch a specific container slot
   project <name>                  Open project by name/hash from anywhere
   tmux                            Launch ClaudeBox with tmux support enabled
-  vpn-routing [enable|disable|add|remove]  Manage corporate VPN routing"
+  vpn-routing [enable|disable|add|remove]  Manage corporate VPN routing
+  vpn-gw [start|stop|status]             Manage shared AmneziaWG gateway
+  mount [add|remove|list]                Manage extra workspace mounts"
     
     # Check if we're in a project directory
     local project_folder_name
@@ -290,6 +306,8 @@ dispatch_command() {
         # Info commands
         # VPN routing commands
         vpn-routing)      _cmd_vpn_routing "$@" ;;
+        vpn-gw)           _cmd_vpn_gw "$@" ;;
+        mount)            _cmd_mount "$@" ;;
 
         projects)         _cmd_projects "$@" ;;
         allowlist)        _cmd_allowlist "$@" ;;

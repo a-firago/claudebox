@@ -327,9 +327,59 @@ run_claudebox_container() {
     # Mount SSH directory
     docker_args+=(-v "$HOME/.ssh":"/home/$DOCKER_USER/.ssh:ro")
 
-    # Mount AmneziaWG VPN config directory (read-only; awg-quick only reads configs)
-    if [[ -d "$HOME/.config/AmneziaVPN.ORG" ]]; then
-        docker_args+=(-v "$HOME/.config/AmneziaVPN.ORG":"/home/$DOCKER_USER/.config/AmneziaVPN.ORG:ro")
+    # Extra mounts from [mounts] section in profiles.ini
+    if [[ -f "$PROJECT_PARENT_DIR/profiles.ini" ]]; then
+        local mount_spec host_path
+        while IFS= read -r mount_spec; do
+            if [[ -z "$mount_spec" ]]; then
+                continue
+            fi
+            # Expand ~ in host path
+            host_path="${mount_spec%%:*}"
+            host_path="${host_path/#\~/$HOME}"
+            local container_path="${mount_spec#*:}"
+            if [[ ! -e "$host_path" ]]; then
+                printf '[mount] Warning: skipping missing host path: %s\n' "$host_path" >&2
+                continue
+            fi
+            docker_args+=(-v "${host_path}:${container_path}")
+        done < <(read_profile_section "$PROJECT_PARENT_DIR/profiles.ini" "mounts" 2>/dev/null || true)
+    fi
+
+    # Track temp files for cleanup via the EXIT trap set up later in the MCP section.
+    # Declared here so the VPN gateway hook can register its temp file before MCP runs.
+    declare -a mcp_temp_files=()
+
+    # VPN: either route through the shared gateway or mount configs for in-container AWG.
+    local vpn_gw_ip=""
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${VPN_GW_CONTAINER}$"; then
+        vpn_gw_ip=$(docker inspect "$VPN_GW_CONTAINER" \
+            --format "{{(index .NetworkSettings.Networks \"${VPN_GW_NETWORK}\").IPAddress}}" \
+            2>/dev/null || true)
+    fi
+
+    if [[ -n "$vpn_gw_ip" ]]; then
+        # Gateway mode: join the VPN network; a startup hook sets the default route.
+        # AWG configs are NOT mounted — the gateway owns the tunnel.
+        local gw_client_hook
+        gw_client_hook=$(mktemp /tmp/claudebox-vpngw-client-XXXXXX.sh)
+        mcp_temp_files+=("$gw_client_hook")
+        cat > "$gw_client_hook" << HOOK
+#!/bin/sh
+ip route replace default via "${vpn_gw_ip}"
+printf '[vpn-gw] Routing via gateway %s\n' "${vpn_gw_ip}"
+HOOK
+        chmod +x "$gw_client_hook"
+        docker_args+=(
+            --network "$VPN_GW_NETWORK"
+            -e "CLAUDEBOX_VPN_GW_IP=$vpn_gw_ip"
+            -v "$gw_client_hook:/etc/claudebox/startup.d/05-vpn-gw-client.sh:ro"
+        )
+    else
+        # No gateway: mount AWG configs so the container can run the tunnel locally.
+        if [[ -d "$HOME/.config/AmneziaVPN.ORG" ]]; then
+            docker_args+=(-v "$HOME/.config/AmneziaVPN.ORG":"/home/$DOCKER_USER/.config/AmneziaVPN.ORG:ro")
+        fi
     fi
 
     # ADB host server forwarding — when aosp profile is active, route adb through
@@ -392,11 +442,9 @@ run_claudebox_container() {
     
     local user_mcp_file=""
     local project_mcp_file=""
-    
-    # Track all temporary MCP files for cleanup
-    declare -a mcp_temp_files=()
-    
+
     # Set up cleanup trap for temporary MCP config files
+    # (mcp_temp_files array is declared earlier in this function)
     cleanup_mcp_files() {
         local file
         for file in "${mcp_temp_files[@]}"; do
@@ -506,8 +554,10 @@ run_claudebox_container() {
         docker_args+=("${container_args[@]}")
     fi
     
-    # Apply host iptables VPN routing rules if opted in via profiles.ini
-    if [[ -f "$PROJECT_PARENT_DIR/profiles.ini" ]] && \
+    # Apply host iptables VPN routing rules only when NOT using the shared gateway.
+    # In gateway mode the gateway container handles all NAT; host rules are not needed.
+    if [[ -z "$vpn_gw_ip" ]] && \
+       [[ -f "$PROJECT_PARENT_DIR/profiles.ini" ]] && \
        grep -q '^\[vpn-routing\]' "$PROJECT_PARENT_DIR/profiles.ini"; then
         _setup_vpn_routing
     fi
