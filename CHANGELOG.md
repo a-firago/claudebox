@@ -4,6 +4,41 @@ All notable changes to ClaudeBox will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added
+- **VPN Gateway** (`vpn-gw` command): Shared AmneziaWG container that all ClaudeBox slots
+  route through, so multiple parallel sessions share one VPN connection.
+  - `claudebox vpn-gw start|stop|status`
+  - Dedicated `claudebox-vpn` Docker bridge network (172.20.0.0/16)
+  - Startup hook automatically replaces default route in each client container
+  - DNS fixed via direct resolv.conf rewrite when gateway is active
+- **VPN Routing** (`vpn-routing` command): Route corporate VPN CIDRs through the host
+  into containers (or through the VPN gateway for bypass rules).
+  - `claudebox vpn-routing enable|disable|add|remove|list`
+  - Stored per-project in `profiles.ini [vpn-routing]`
+- **Mount command** (`mount`): Bind-mount extra host directories into the container workspace.
+  - `claudebox mount add|remove|list`
+  - Stored per-project in `profiles.ini [mounts]`
+  - Mounts applied automatically at container launch
+- **Proxy command** (`proxy`): Forward HTTP/HTTPS proxy env vars into containers.
+  - `claudebox proxy add|remove|list|show`
+  - Scripts live in `~/.config/proxy/*.sh`; sourced at launch, forwarded via `-e` flags
+- **AmneziaWG profile**: Install AmneziaWG kernel module and tools for in-container or
+  gateway VPN tunnels.
+- **AOSP/ADB profile**: Route ADB through the host's `adb` server so USB-attached devices
+  are visible inside the container (`ANDROID_ADB_SERVER_ADDRESS=host.docker.internal`).
+- **`kill` command**: Stop running ClaudeBox containers.
+- **`project` command**: Open a project by name or hash from any directory.
+- **`iproute2`** installed in the base image so `ip route` is always available.
+- VPN gateway documentation at `docs/vpn-gateway.md`.
+
+### Fixed
+- `host.docker.internal` resolves to the wrong bridge IP on the `claudebox-vpn` network;
+  now uses `VPN_GW_SUBNET_GW` directly when the VPN gateway is active (affects ADB).
+- `vpn-routing`, `vpn-gw`, `mount`, `proxy` no longer require a slot or Docker image
+  (`get_command_requirements` returns `"none"`).
+
 ## [2.0.0] - 2025-07-25
 
 ### Added

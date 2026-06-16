@@ -19,9 +19,9 @@ All arguments are classified into exactly one of four buckets:
 
 ```bash
 # Four flag buckets (Bash 3.2 compatible - no associative arrays)
-readonly HOST_ONLY_FLAGS=(--verbose rebuild tmux)
+readonly HOST_ONLY_FLAGS=(--verbose rebuild)
 readonly CONTROL_FLAGS=(--enable-sudo --disable-firewall)
-readonly SCRIPT_COMMANDS=(shell create slot slots revoke profiles projects profile info help -h --help add remove install allowlist)
+readonly SCRIPT_COMMANDS=(shell create slot slots revoke profiles projects profile info help -h --help add remove install allowlist clean save project tmux kill vpn-routing vpn-gw mount proxy)
 
 parse_cli_args() {
     # Single parsing loop - each arg goes into exactly ONE bucket
@@ -72,20 +72,28 @@ done
 |-------------|---------|------------|---------|------------|
 | `--verbose` | Host-only | CLI parser | Sets VERBOSE=true | No |
 | `rebuild` | Host-only | CLI parser | Sets REBUILD=true | No |
-| `tmux` | Host-only | CLI parser | Sets CLAUDEBOX_WRAP_TMUX=true | No |
 | `--enable-sudo` | Control | Entrypoint | Enables sudo in container | Yes |
 | `--disable-firewall` | Control | Entrypoint | Disables firewall | Yes |
 | `shell` | Script command | Host | Launches interactive shell | No |
 | `create` | Script command | Host | Creates new slot | No |
 | `slot`/`slots` | Script command | Host | Manages slots | No |
 | `revoke` | Script command | Host | Removes slots | No |
-| `profiles` | Script command | Host | Manages profiles | No |
-| `projects` | Script command | Host | Lists projects | No |
-| `profile` | Script command | Host | Shows current profile | No |
-| `add`/`remove` | Script command | Host | Package management | No |
-| `install` | Script command | Host | Installs packages | No |
+| `kill` | Script command | Host | Stops running containers | No |
+| `profiles` | Script command | Host | Lists available profiles | No |
+| `projects` | Script command | Host | Lists all projects | No |
+| `profile` | Script command | Host | Shows/manages current profile | No |
+| `add`/`remove` | Script command | Host | Adds/removes profiles | No |
+| `install` | Script command | Host | Installs apt packages | No |
 | `allowlist` | Script command | Host | Manages firewall allowlist | No |
 | `info` | Script command | Host | Shows project info | No |
+| `clean` | Script command | Host | Cleanup operations | No |
+| `save` | Script command | Host | Saves default CLI flags | No |
+| `project` | Script command | Host | Opens project by name | No |
+| `tmux` | Script command | Host | Launches with tmux support | No |
+| `vpn-routing` | Script command | Host | Manages VPN routing CIDRs | No |
+| `vpn-gw` | Script command | Host | Manages VPN gateway container | No |
+| `mount` | Script command | Host | Manages extra workspace mounts | No |
+| `proxy` | Script command | Host | Manages proxy scripts | No |
 | `help`/`-h`/`--help` | Script command | Host | Shows help | No |
 | `update` | Pass-through | Container | Updates Claude CLI | Yes |
 | `config` | Pass-through | Container | Configures Claude | Yes |

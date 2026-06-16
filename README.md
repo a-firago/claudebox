@@ -22,16 +22,15 @@ The Ultimate Claude Code Docker Development Environment - Run Claude AI's coding
 ╚═════╝  ╚═════╝ ╚═╝  ╚═╝
 ```
 
-## 🚀 What's New in Latest Update
+## 🚀 What's New
 
-- **Enhanced UI/UX**: Improved menu alignment and comprehensive info display
-- **New `profiles` Command**: Quick listing of all available profiles with descriptions
-- **Firewall Management**: New `allowlist` command to view/edit network allowlists
-- **Per-Project Isolation**: Separate Docker images, auth state, history, and configs
-- **Improved Clean Menu**: Clear descriptions showing exact paths that will be removed
-- **Profile Management Menu**: Interactive profile command with status and examples
-- **Persistent Project Data**: Auth state, shell history, and tool configs preserved
-- **Smart Profile Dependencies**: Automatic dependency resolution (e.g., C includes build-tools)
+- **Shared VPN Gateway**: Run multiple parallel slots through a single AmneziaWG connection (`vpn-gw`)
+- **Corporate VPN Routing**: Route specific CIDRs through the host's corporate VPN (`vpn-routing`)
+- **Extra Workspace Mounts**: Bind-mount additional host directories per project (`mount`)
+- **HTTP/HTTPS Proxy**: Forward proxy env vars from `~/.config/proxy/` into containers (`proxy`)
+- **ADB Support**: AOSP profile routes ADB through the host's server for USB device access
+- **`kill` command**: Stop running ClaudeBox containers
+- **`project` command**: Open any project by name from anywhere
 
 ## ✨ Features
 
@@ -226,6 +225,8 @@ claudebox profile rust go         # Rust + Go
 - **datascience** - Data Science (Python, Jupyter, R)
 - **security** - Security Tools (scanners, crackers, packet tools)
 - **ml** - Machine Learning (build layer only; Python via uv)
+- **amneziawg** - AmneziaWG VPN client (kernel module + tools; required for `vpn-gw`)
+- **aosp** - Android/AOSP development (ADB routed through host's adb server)
 
 ### Default Flags Management
 
@@ -275,6 +276,66 @@ claudebox update
 # View/edit firewall allowlist
 claudebox allowlist
 ```
+
+### VPN Gateway
+
+Run a single shared AmneziaWG container that all slots route through — the VPN server
+sees one connection regardless of how many parallel sessions are running.
+
+```bash
+# Prerequisites: amneziawg profile + AWG config in ~/.config/AmneziaVPN.ORG/
+claudebox add amneziawg
+claudebox vpn-gw start
+
+# All containers launched after this route through the gateway automatically
+claudebox tmux 3       # three parallel sessions, one VPN connection
+
+claudebox vpn-gw status
+claudebox vpn-gw stop
+```
+
+See `docs/vpn-gateway.md` for full setup, corporate VPN bypass, and troubleshooting.
+
+### Corporate VPN Routing
+
+Make corporate VPN resources reachable from inside containers without routing all
+traffic through the VPN:
+
+```bash
+claudebox vpn-routing enable
+claudebox vpn-routing add 10.10.0.0/16 192.168.50.0/24
+claudebox vpn-routing list
+claudebox vpn-routing disable
+```
+
+### Extra Workspace Mounts
+
+Bind-mount additional host directories into the container workspace per project:
+
+```bash
+claudebox mount add /home/user/shared:/workspace/shared
+claudebox mount list
+claudebox mount remove /home/user/shared:/workspace/shared
+```
+
+### HTTP/HTTPS Proxy
+
+Forward proxy environment variables into containers from scripts in `~/.config/proxy/`:
+
+```bash
+# Point to your existing proxy script (stored as a symlink)
+claudebox proxy add ~/bin/proxy.sh
+
+# Verify (password masked)
+claudebox proxy show
+
+# Manage
+claudebox proxy list
+claudebox proxy remove proxy
+```
+
+All containers launched after configuration will receive `http_proxy`, `https_proxy`,
+`ftp_proxy`, and `no_proxy` automatically.
 
 ### Tmux Integration
 

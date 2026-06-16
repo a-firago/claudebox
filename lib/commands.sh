@@ -153,7 +153,9 @@ show_help() {
   tmux                            Launch ClaudeBox with tmux support enabled
   vpn-routing [enable|disable|add|remove]  Manage corporate VPN routing
   vpn-gw [start|stop|status]             Manage shared AmneziaWG gateway
-  mount [add|remove|list]                Manage extra workspace mounts"
+  mount [add|remove|list]                Manage extra workspace mounts
+  proxy [add|remove|list|show]           Manage HTTP/HTTPS proxy scripts
+  kill [all|<slot>]                      Stop running ClaudeBox containers"
     
     # Check if we're in a project directory
     local project_folder_name
@@ -262,7 +264,12 @@ show_full_help() {
   slots                           List all container slots\
   slot <number>                   Launch a specific container slot\
   project <name>                  Open project by name/hash from anywhere\
-  tmux                            Launch ClaudeBox with tmux support enabled')
+  tmux                            Launch ClaudeBox with tmux support enabled\
+  vpn-routing [enable|disable|add|remove]  Manage corporate VPN routing\
+  vpn-gw [start|stop|status]             Manage shared AmneziaWG gateway\
+  mount [add|remove|list]                Manage extra workspace mounts\
+  proxy [add|remove|list|show]           Manage HTTP/HTTPS proxy scripts\
+  kill [all|<slot>]                      Stop running ClaudeBox containers')
         
         # Output everything at once
         echo
