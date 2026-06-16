@@ -9,7 +9,7 @@
 # Four flag buckets (Bash 3.2 compatible - no associative arrays)
 readonly HOST_ONLY_FLAGS=(--verbose rebuild)
 readonly CONTROL_FLAGS=(--enable-sudo --disable-firewall)
-readonly SCRIPT_COMMANDS=(shell create slot slots revoke profiles projects profile info help -h --help add remove install allowlist clean save project tmux kill vpn-routing vpn-gw mount)
+readonly SCRIPT_COMMANDS=(shell create slot slots revoke profiles projects profile info help -h --help add remove install allowlist clean save project tmux kill vpn-routing vpn-gw mount proxy)
 
 # parse_cli_args - Central CLI parsing with four-bucket architecture
 # Usage: parse_cli_args "$@"
@@ -90,7 +90,7 @@ get_command_requirements() {
             echo "image"
             ;;
         # Config-only commands — edit host files, no slot or image required
-        vpn-routing|vpn-gw|mount)
+        vpn-routing|vpn-gw|mount|proxy)
             echo "none"
             ;;
         # Commands that need Docker and will run containers

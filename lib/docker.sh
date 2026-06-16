@@ -367,6 +367,7 @@ run_claudebox_container() {
         cat > "$gw_client_hook" << HOOK
 #!/bin/sh
 ip route replace default via "${vpn_gw_ip}"
+printf 'nameserver 8.8.8.8\nnameserver 1.1.1.1\n' > /etc/resolv.conf
 printf '[vpn-gw] Routing via gateway %s\n' "${vpn_gw_ip}"
 HOOK
         chmod +x "$gw_client_hook"
@@ -391,8 +392,38 @@ HOOK
         fi
     fi
     if [[ "$aosp_active" == "true" ]]; then
-        docker_args+=(--add-host=host.docker.internal:host-gateway)
+        # When on the VPN gateway network, host-gateway resolves to the wrong bridge IP.
+        # Use the VPN network's gateway address (the host's IP on that bridge) directly.
+        if [[ -n "$vpn_gw_ip" ]]; then
+            docker_args+=(--add-host="host.docker.internal:${VPN_GW_SUBNET_GW}")
+        else
+            docker_args+=(--add-host=host.docker.internal:host-gateway)
+        fi
         docker_args+=(-e ANDROID_ADB_SERVER_ADDRESS=host.docker.internal)
+    fi
+
+    # Proxy env vars from ~/.config/proxy/*.sh
+    # Each script exports http_proxy / https_proxy / etc.; vars are forwarded to the container.
+    local proxy_dir="$HOME/.config/proxy"
+    if [[ -d "$proxy_dir" ]]; then
+        local proxy_vars
+        proxy_vars=$(
+            unset http_proxy https_proxy ftp_proxy no_proxy HTTP_PROXY HTTPS_PROXY FTP_PROXY NO_PROXY 2>/dev/null || true
+            local f
+            for f in "$proxy_dir"/*.sh; do
+                if [[ -f "$f" ]]; then
+                    # shellcheck disable=SC1090
+                    source "$f" >/dev/null 2>&1 || true
+                fi
+            done
+            env | grep -iE '^(http_proxy|https_proxy|ftp_proxy|no_proxy)=' 2>/dev/null || true
+        )
+        local proxy_line
+        while IFS= read -r proxy_line; do
+            if [[ -n "$proxy_line" ]]; then
+                docker_args+=(-e "$proxy_line")
+            fi
+        done <<< "$proxy_vars"
     fi
 
     # Mount .env file if it exists in the project directory

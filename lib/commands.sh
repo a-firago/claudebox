@@ -74,6 +74,13 @@ source "${LIB_DIR}/commands.vpngw.sh"
 source "${LIB_DIR}/commands.mount.sh"
 
 # ============================================================================
+# PROXY COMMANDS - HTTP/HTTPS proxy configuration for containers
+# ============================================================================
+# Commands: proxy
+# - proxy: Add/remove/list/show proxy scripts from ~/.config/proxy/
+source "${LIB_DIR}/commands.proxy.sh"
+
+# ============================================================================
 # SYSTEM COMMANDS - System utilities and special features
 # ============================================================================
 # Commands: save, unlink, rebuild, tmux, project
@@ -308,6 +315,7 @@ dispatch_command() {
         vpn-routing)      _cmd_vpn_routing "$@" ;;
         vpn-gw)           _cmd_vpn_gw "$@" ;;
         mount)            _cmd_mount "$@" ;;
+        proxy)            _cmd_proxy "$@" ;;
 
         projects)         _cmd_projects "$@" ;;
         allowlist)        _cmd_allowlist "$@" ;;
